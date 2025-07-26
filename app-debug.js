@@ -1,4 +1,7 @@
-// Firebase configuration - will use environment variables in production
+// Firebase configuration that works on Vercel
+// Note: For static sites on Vercel, environment variables aren't directly accessible
+// We'll use the hardcoded values but you can create a build process later if needed
+
 const firebaseConfig = {
     apiKey: "AIzaSyB0AMwOt8UliUGoLmiZkDFl1DtawEGGI24",
     authDomain: "collaborative-to-do-list-3d3a9.firebaseapp.com",
@@ -15,9 +18,6 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 const todosCollection = db.collection('todos');
-
-console.log('🔧 Firebase initialized for project:', firebaseConfig.projectId);
-console.log('🔧 Current URL:', window.location.href);
 
 // Configure Google Auth Provider with additional settings
 const provider = new firebase.auth.GoogleAuthProvider();
@@ -80,31 +80,38 @@ loginBtn.onclick = () => {
 logoutBtn.onclick = () => {
     auth.signOut()
         .then(() => {
-            console.log('Logout successful');
+            console.log('✅ Logout successful');
         })
         .catch((error) => {
-            console.error('Logout error:', error);
+            console.error('❌ Logout error:', error);
         });
 };
 
-// Auth state listener
+// Auth state listener with detailed logging
 auth.onAuthStateChanged(user => {
-    console.log('Auth state changed:', user ? 'User logged in' : 'User logged out');
+    console.log('🔄 Auth state changed:', user ? 'User logged in' : 'User logged out');
     if (user) {
         // User is signed in
-        console.log('User details:', user.displayName, user.email);
+        console.log('✅ User details:', {
+            name: user.displayName,
+            email: user.email,
+            photoURL: user.photoURL,
+            uid: user.uid
+        });
+        
         loginBtn.classList.add('hidden');
         userInfo.classList.remove('hidden');
         userInfo.classList.add('flex');
         addTodoForm.classList.remove('hidden');
         loginPrompt.classList.add('hidden');
-        userPic.src = user.photoURL;
+        userPic.src = user.photoURL || 'https://via.placeholder.com/40';
         
         // Listen for real-time to-do updates
         listenForTodos();
     } else {
         // User is signed out
-         if (unsubscribe) {
+        console.log('👤 User signed out');
+        if (unsubscribe) {
             unsubscribe();
         }
         loginBtn.classList.remove('hidden');
@@ -115,18 +122,19 @@ auth.onAuthStateChanged(user => {
     }
 });
 
-
 // --- Firestore Operations ---
 
 // Listen for real-time changes to the 'todos' collection
 let unsubscribe; // To stop listening when user logs out
 function listenForTodos() {
+    console.log('👂 Starting to listen for todos...');
     // Order tasks by creation time, newest first
     unsubscribe = todosCollection.orderBy('createdAt', 'desc').onSnapshot(snapshot => {
+        console.log('📄 Received todos update:', snapshot.docs.length, 'items');
         const todos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         renderTodos(todos);
     }, error => {
-        console.error("Error fetching todos: ", error);
+        console.error("❌ Error fetching todos: ", error);
     });
 }
 
@@ -142,6 +150,7 @@ function renderTodos(todos) {
             <div class="flex items-center gap-3">
                 <input type="checkbox" class="toggle-complete h-5 w-5 rounded text-blue-500 focus:ring-0" ${todo.completed ? 'checked' : ''}>
                 <span class="task-text ${todo.completed ? 'line-through' : ''}">${todo.text}</span>
+                <small class="text-gray-400">${todo.author || 'Anonymous'}</small>
             </div>
             <button class="delete-todo text-red-400 hover:text-red-600 font-bold">✕</button>
         `;
@@ -156,16 +165,18 @@ addTodoForm.addEventListener('submit', e => {
     const user = auth.currentUser;
 
     if (text && user) {
+        console.log('➕ Adding new todo:', text);
         todosCollection.add({
             text: text,
             completed: false,
             createdAt: firebase.firestore.FieldValue.serverTimestamp(),
             uid: user.uid,
-            author: user.displayName
+            author: user.displayName || 'Anonymous'
         }).then(() => {
+            console.log('✅ Todo added successfully');
             todoInput.value = ''; // Clear input field
         }).catch(error => {
-            console.error("Error adding document: ", error);
+            console.error("❌ Error adding document: ", error);
         });
     }
 });
@@ -181,13 +192,19 @@ todoList.addEventListener('click', e => {
     // Toggle complete status
     if (target.matches('.toggle-complete')) {
         const currentStatus = target.checked;
+        console.log('🔄 Toggling todo completion:', todoId, currentStatus);
         todosCollection.doc(todoId).update({ completed: currentStatus });
     }
 
     // Delete to-do
     if (target.matches('.delete-todo')) {
         if(confirm("Are you sure you want to delete this task?")) {
+            console.log('🗑️ Deleting todo:', todoId);
             todosCollection.doc(todoId).delete();
         }
     }
 });
+
+// Debug info
+console.log('🔧 App initialized. Current URL:', window.location.href);
+console.log('🔧 Firebase config loaded for project:', firebaseConfig.projectId);
