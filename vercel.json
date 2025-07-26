@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 {
   "name": "collaborative-todo-list",
   "version": 2,
@@ -14,3 +15,21 @@
     }
   ]
 }
+=======
+{
+  "name": "collaborative-todo-list",
+  "version": 2,
+  "builds": [
+    {
+      "src": "index.html",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ]
+}
+>>>>>>> eb83fff6f4c11d2c13e6e8e216e532c0b78c5b60
