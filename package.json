@@ -1,0 +1,22 @@
+{
+  "name": "collaborative-todo-list",
+  "version": "1.0.0",
+  "description": "A collaborative to-do list app with Firebase",
+  "main": "index.html",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "python server.py",
+    "build": "echo 'Static site - no build needed'",
+    "deploy": "vercel --prod"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  },
+  "devDependencies": {},
+  "keywords": ["todo", "firebase", "collaborative", "javascript", "vercel"],
+  "author": "Ravi Kumar",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
